@@ -1,0 +1,69 @@
+Thomas Burt
+September 26, 2018
+README
+
+Grammar ($ = epsilon):
+program --> meta_statement program | program_tail
+program_tail --> type_name identifier data_or_func program_tail | $
+data_or_func --> beginning_data_decls ; | start_func
+beginning_data_decls --> , id_list | $	
+start_func --> ( parameter_list ) func_follow func_list	
+func_list --> func func_list | $ 
+func --> func_decl func_follow
+func_follow --> ; | { data_decls statements }
+func_decl --> type_name identifier ( parameter_list )		
+parameter_list --> type_name parameter_list_tail| $
+parameter_list_tail --> identifier non_empty_list | $
+non_empty_list --> , type_name identifier non_empty_list | $
+data_decls --> type_name id_list ; data_decls | $
+type_name --> int | void
+id_list --> identifier id_list_tail 
+id_list_tail --> , identifier id_list_tail | $
+statements --> statement statements | $
+statement --> exp_statement | print_func_call | scan_func_call | if_statement | while_statement | return_statement | break_statement | continue_statement
+exp_statement --> identifier assign_or_func
+assign_or_func --> = expression ; | ( expr_list ) ;
+print_func_call --> printf ( string printf_tail
+printf_tail --> ) ; | , expression ) ;
+scan_func_call --> scanf ( string, &expression)
+expr_list --> non_empty_expr_list | $
+non_empty_expr_list --> expression expr_list_tail
+expr_list_tail --> , expression expr_list_tail | $
+if_statement --> if ( condition_expression ) block_statements else_statement
+else_statement --> else block_statements | $
+while_statement --> while ( condition_expression ) block_statements
+return_statement --> return return_tail
+return_tail --> ; | expression ;
+break_statement --> break ;
+continue_statement --> continue ;
+block_statements --> { statements }
+condition_expression --> condition condition_expression_tail
+condition_expression_tail --> condition_op condition condition_expression_tail | $
+condition_op --> && | ||
+condition --> expression comparison_op expression
+comparison_op --> == | != | > inequality_tail | < inequality_tail
+inequality_tail --> = | $
+expression --> term expression_tail
+expression_tail --> addop term expression_tail | $
+addop --> + | -
+term --> factor term_tail
+term_tail --> mulop factor term_tail | $
+mulop --> * | /
+factor --> identifier factor_tail | number | - number | ( expression )
+factor_tail --> [ expression ] | ( expr_list ) | $
+identifier --> id identifier_tail
+identifier_tail --> [ expression ] | $
+id --> letter let_or_dig
+let_or_dig --> letter let_or_dig | digit let_or_dig | _ let_or_dig | $
+number --> digit number_tail
+number_tail --> digit number_tail | $
+letter --> a|b|c|…|x|y|z|A|B|C|… |X|Y|Z
+digit --> 0|1|2|3|4|5|6|7|8|9
+str --> any string between (and including) the closest pair of quotation marks
+meta_statements --> any string begins with ’#’ or ’//’ and ends with the end of line (’\n’)
+
+README section 
+	For this assignment, I used Ruby as my coding language and created a Recursive Descent Parser.  I built this off of the baselines of my assignment 2.  Meta-statements I implemented later on while working on making the grammar, but need to be mentioned now.  I check for meta-statements at the beginning of the file by using the meta-statement function to return true or false and going checking for the prefixes of meta-statements. Meta-statement is called in the first production, or function, program.  Which if it detects a meta-statement, it will call itself, program, again.  This is to check for more meta-statements at the beginning of the file.  I then created another production, program_tail, to deal with the other two options of the original program production once the meta-statements were dealt with.  The first step I made was creating the LL(1) unambiguous grammar.  I first went through each production and checked for left recursion and common prefix elimination.  
+       An example of a case of common prefix elimination was for the production func.  The func production has a common prefix of func_decl for its options.  In order to get rid of this, I made the production have one option where func_decl is called then a new function I created called func_follow is called to deal with the cases after func_decl from the original func production. Similar things were done to many of the productions with the need for common prefix elimination.  This was needed for the productions: func, parameter_list, identifier, statement (for the first two productions), print_func_call, if_statement, return_statement, condition_expression, comparison_op, expression, term and factor. Essentially, for eliminating common prefixes, I eliminate the options for that production, make the common prefix a single possible prefix and create a new production for this original ambiguous production to deal with the options after the common prefix.  
+	As for left recursion, this also had many occurrences in the original grammar.  A good example of one of the productions that had left recursion was the production expression.  The original grammar had expression --> term | expression addop term.  I changed it to have one option where the prefix is a term followed by the function expression_tail, which checked if an addop (+ or -) followed the term or just epsilon.  Other productions that had similar problems to expression were: non_empty_list, id_list, identifier, non_empty_expr_list and term.  I dealt with all of these in a similar manner.  Essentially, to get rid of left recursion, I simply eliminated the left recursive call, kept the prefix to be the same, and formed a new function that would recursively call itself without left recursion.  Most of the productions that were needed to be changed for this were
+       Finally, there were other less common ambiguous problems I had to deal with.  For example, the program_tail function had a common prefix error as data_decls and func_list both had their prefixes First = {int, void, $} followed by an identifier.  I just created three new functions for distinguishing beginning data declarations and the first function solving ambiguity. There were other function that had common prefixes and left recursion like id_list.  Once the grammar was LL(1) and unambiguous.  The coding was then simply the implementation of the grammar where calculated First, Follow and Predict helped of productions helped.  
